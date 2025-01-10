@@ -18,8 +18,10 @@ public class ElementActions {
     public void launchBrowser(){
         playwright = Playwright.create();
         ArrayList<String> arguments = new ArrayList<>();
+        arguments.add("--enable-javascript-dialogs");
+        arguments.add("--disable-popup-blocking");
         arguments.add("--start-maximized");
-        browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false).setArgs(arguments).setSlowMo(3000));
+        browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false).setArgs(arguments).setChannel("chrome").setSlowMo(500));
     }
 
     @AfterClass
@@ -66,4 +68,41 @@ public class ElementActions {
         genderRadioBtn.check();
         assertThat(genderRadioBtn).isChecked();
     }
+
+    @Test
+    public void shouldCheckAllBoxes(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        Locator checkboxes = page.locator("//label[text()='Days:']//..//input[@type='checkbox']");
+        for (int i = 0; i < checkboxes.count() ; i++) {
+            checkboxes.nth(i).check();
+            assertThat(checkboxes.nth(i)).isChecked();
+        }
+    }
+
+    @Test
+    public void shouldSelectDropdownOptions(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        page.locator("#country").selectOption("china");//1 option
+        page.locator("#colors").selectOption(new String[]{"Blue", "Yellow", "White"});
+    }
+
+    @Test
+    public void shouldHoverOver(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        // <button class="dropbtn" fdprocessedid="xox2ns">Point Me</button>
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Point Me")).hover();
+        page.locator(".dropdown-content > a:nth-child(1)").click();
+    }
+
+    @Test
+    public void shouldHandleAlert(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        page.onceDialog(dialog -> {
+            System.out.println("Alert text: " + dialog.message());
+            dialog.accept();
+        });
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Confirmation Alert")).click();
+    }
+
+
 }
