@@ -2,8 +2,12 @@ package org.qafellas;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.MouseButton;
+import org.testng.Assert;
 import org.testng.annotations.*;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
@@ -19,9 +23,8 @@ public class ElementActions {
         playwright = Playwright.create();
         ArrayList<String> arguments = new ArrayList<>();
         arguments.add("--enable-javascript-dialogs");
-        arguments.add("--disable-popup-blocking");
         arguments.add("--start-maximized");
-        browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false).setArgs(arguments).setChannel("chrome").setSlowMo(500));
+        browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false).setArgs(arguments).setChannel("chrome").setSlowMo(2000));
     }
 
     @AfterClass
@@ -99,9 +102,65 @@ public class ElementActions {
         page.navigate("https://testautomationpractice.blogspot.com/");
         page.onceDialog(dialog -> {
             System.out.println("Alert text: " + dialog.message());
+            Assert.assertEquals(dialog.message(), "Press a button!");
             dialog.accept();
         });
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Confirmation Alert")).click();
+    }
+
+    @Test
+    public void shouldDragAndDrop(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        page.locator("//div[@id='draggable']").dragTo(page.locator("//div[@id='droppable']"));
+        assertThat(page.locator("//div[@id='droppable']/p")).hasText("Dropped!");
+    }
+
+    @Test
+    public void shouldUseKeyStrokes(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        Locator emailInputBox = page.locator("//label[text()='Email:']//following-sibling::input[1]");
+        emailInputBox.fill("xyz@gmail.com");
+        emailInputBox.press("Control+A");
+        emailInputBox.press("Backspace");
+    }
+
+    @Test
+    public void shouldDoRightClick(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        page.locator("#laptops > a:nth-child(2)").click(new Locator.ClickOptions().setButton(MouseButton.RIGHT));
+    }
+
+    @Test
+    public void shouldUploadSingleFile(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        String file = "Kid.png";
+        page.locator("#singleFileInput").setInputFiles(Paths.get("src/test/java/data/" + file));
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Upload Single File")).click();
+        assertThat(page.locator("#singleFileStatus")).containsText("Single file selected: " + file);
+    }
+
+    @Test
+    public void shouldUploadMultipleFiles(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        String file1 = "Kid.png";
+        String file2 = "Qafellas.png";
+        String dataFolderPath = "src/test/java/data/";
+        page.locator("#multipleFilesInput").setInputFiles(new Path[]{Paths.get(dataFolderPath + file1), Paths.get(dataFolderPath + file2)});
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Upload Multiple Files")).click();
+        Locator multipleFileStatus = page.locator("#multipleFilesStatus");
+        assertThat(multipleFileStatus).containsText("Multiple files selected: ");
+        assertThat(multipleFileStatus).containsText(file1);
+        assertThat(multipleFileStatus).containsText(file2);
+    }
+
+
+    @Test
+    public void shouldDownloadFile(){
+        page.navigate("https://www.selenium.dev/downloads/");
+        Download download = page.waitForDownload(() -> {
+            page.locator("//p[contains(text(), 'stable version')]/a").click();
+        });
+        download.saveAs(Paths.get("./src/test/java/downloads/selenium.jar"));
     }
 
 
