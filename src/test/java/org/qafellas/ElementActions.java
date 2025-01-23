@@ -5,6 +5,7 @@ import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.MouseButton;
 import org.testng.Assert;
 import org.testng.annotations.*;
+import utils.HelperFunctions;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -163,5 +164,51 @@ public class ElementActions {
         download.saveAs(Paths.get("./src/test/java/downloads/selenium.jar"));
     }
 
+    @Test
+    public void shouldHandlePopUpWindows(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        Page page2 =  page.waitForPopup(() -> {
+            page.locator("//button[text()='New Tab']").click();
+        });
+        assertThat(page2).hasTitle("Your Store");
+        page2.locator("input[name='search']").fill("Florida is snowing!!!");
+        page2.close();
+        assertThat(page).hasTitle("Automation Testing Practice");
+    }
 
+    @Test
+    public void shouldHandleIFrames(){
+        page.setDefaultTimeout(90000);
+        page.navigate("https://www.w3schools.com/jsref/tryit.asp?filename=tryjsref_submit_get");
+
+       // page.frameLocator("//iframe[@id='iframeResult']").locator("//button[text()='Try it']").click();
+        page.frame("iframeResult").locator("//button[text()='Try it']").click();
+    }
+
+    @Test
+    public void shouldHandleStaticTables(){
+        page.navigate("https://testautomationpractice.blogspot.com/");
+        Locator cols = page.locator("table[name='BookTable'] > tbody > tr > th");
+        Locator rows = page.locator("table[name='BookTable'] > tbody > tr");
+        int rowCount = rows.count();// Number of rows
+        int colCount = cols.count(); // Number of columns
+
+        // This is how we retrieve all cell values with nested loop
+        for(int i = 2; i <= rowCount; i++){
+            for (int j = 1; j<=colCount; j++){
+                Locator cell = page.locator("table[name='BookTable'] > tbody > tr:nth-child(" + i + ") > td:nth-child(" + j + ")");
+                System.out.println("row ==> " + i + ": column ==> " + j + ": cellValue ==> " + cell.textContent());
+            }
+
+            System.out.println("-------------------------------------------------------------------------");
+
+        }
+
+        //table[name='BookTable'] > tbody > tr:nth-child(7) > td:nth-child(4)
+
+        HelperFunctions helperFunctions = new HelperFunctions(page);
+        Assert.assertEquals(helperFunctions.cellData(3, 2), "Mukesh");
+        Assert.assertEquals(helperFunctions.cellData(7, 4), "1000");
+
+    }
 }
