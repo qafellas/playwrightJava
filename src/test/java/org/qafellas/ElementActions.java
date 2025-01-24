@@ -211,4 +211,21 @@ public class ElementActions {
         Assert.assertEquals(helperFunctions.cellData(7, 4), "1000");
 
     }
+    @Test
+    public void shouldHandleDynamicTable(){
+        page.navigate("https://practice.expandtesting.com/dynamic-table");
+        page.pause();
+        Locator rows = page.locator("//table[@class='table table-striped']/tbody/tr");
+        int rowCount = rows.count();
+        String cpuVal = "";
+        for (int i = 1; i <= rowCount; i++){
+            Locator cell = page.locator("//table[@class='table table-striped']/tbody/tr[" + i + "]/td[1]");
+            if(cell.textContent().equals("Chrome")){
+                Locator chromeCPU = page.locator("//table[@class='table table-striped']//td[text()='"+cell.textContent()+"']//following-sibling::td[contains(text(), '%')]");
+                cpuVal = chromeCPU.textContent();
+            }
+        }
+        assertThat(page.locator("#chrome-cpu")).containsText(cpuVal);
+
+    }
 }
